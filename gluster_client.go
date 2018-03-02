@@ -7,11 +7,18 @@ import (
 	"os/exec"
 	"strconv"
 	"time"
+	"math/rand"
 
 	"github.com/ofesseler/gluster_exporter/structs"
 	"github.com/prometheus/common/log"
 )
 
+func randSleep() {
+	rand.Seed(time.Now().UnixNano())
+    r := rand.Intn(500000000)
+    d := time.Duration(r)
+    time.Sleep(d)
+}
 func execGlusterCommand(arg ...string) (*bytes.Buffer, error) {
 	stdoutBuffer := &bytes.Buffer{}
 	argXML := append(arg, "--xml")
@@ -55,6 +62,7 @@ func execTouchOnVolumes(mountpoint string) (bool, error) {
 // ExecVolumeInfo executes "gluster volume info" at the local machine and
 // returns VolumeInfoXML struct and error
 func ExecVolumeInfo() (structs.VolumeInfoXML, error) {
+	randSleep()
 	args := []string{"volume", "info"}
 	bytesBuffer, cmdErr := execGlusterCommand(args...)
 	if cmdErr != nil {
@@ -72,6 +80,7 @@ func ExecVolumeInfo() (structs.VolumeInfoXML, error) {
 // ExecVolumeList executes "gluster volume info" at the local machine and
 // returns VolumeList struct and error
 func ExecVolumeList() (structs.VolList, error) {
+	randSleep()
 	args := []string{"volume", "list"}
 	bytesBuffer, cmdErr := execGlusterCommand(args...)
 	if cmdErr != nil {
@@ -89,6 +98,7 @@ func ExecVolumeList() (structs.VolList, error) {
 // ExecPeerStatus executes "gluster peer status" at the local machine and
 // returns PeerStatus struct and error
 func ExecPeerStatus() (structs.PeerStatus, error) {
+	randSleep()
 	args := []string{"peer", "status"}
 	bytesBuffer, cmdErr := execGlusterCommand(args...)
 	if cmdErr != nil {
@@ -106,6 +116,7 @@ func ExecPeerStatus() (structs.PeerStatus, error) {
 // ExecVolumeProfileGvInfoCumulative executes "gluster volume {volume] profile info cumulative" at the local machine and
 // returns VolumeInfoXML struct and error
 func ExecVolumeProfileGvInfoCumulative(volumeName string) (structs.VolProfile, error) {
+	randSleep()
 	args := []string{"volume", "profile"}
 	args = append(args, volumeName)
 	args = append(args, "info", "cumulative")
@@ -113,6 +124,7 @@ func ExecVolumeProfileGvInfoCumulative(volumeName string) (structs.VolProfile, e
 	if cmdErr != nil {
 		return structs.VolProfile{}, cmdErr
 	}
+	log.Debug("gluster volume profile: %v", bytesBuffer)
 	volumeProfile, err := structs.VolumeProfileGvInfoCumulativeXMLUnmarshall(bytesBuffer)
 	if err != nil {
 		log.Errorf("Something went wrong while unmarshalling xml: %v", err)
@@ -124,6 +136,7 @@ func ExecVolumeProfileGvInfoCumulative(volumeName string) (structs.VolProfile, e
 // ExecVolumeStatusAllDetail executes "gluster volume status all detail" at the local machine
 // returns VolumeStatusXML struct and error
 func ExecVolumeStatusAllDetail() (structs.VolumeStatusXML, error) {
+	randSleep()
 	args := []string{"volume", "status", "all", "detail"}
 	bytesBuffer, cmdErr := execGlusterCommand(args...)
 	if cmdErr != nil {
@@ -140,6 +153,7 @@ func ExecVolumeStatusAllDetail() (structs.VolumeStatusXML, error) {
 // ExecVolumeHealInfo executes volume heal info on host system and processes input
 // returns (int) number of unsynced files
 func ExecVolumeHealInfo(volumeName string) (int, error) {
+	randSleep()
 	args := []string{"volume", "heal", volumeName, "info"}
 	entriesOutOfSync := 0
 	bytesBuffer, cmdErr := execGlusterCommand(args...)
@@ -164,6 +178,7 @@ func ExecVolumeHealInfo(volumeName string) (int, error) {
 // returns QuotaList structs and errors
 
 func ExecVolumeQuotaList(volumeName string) (structs.VolumeQuotaXML, error) {
+	randSleep()
 	args := []string{"volume", "quota", volumeName, "list"}
 	bytesBuffer, cmdErr := execGlusterCommand(args...)
 	if cmdErr != nil {
