@@ -38,12 +38,8 @@ func execMountCheck() (*bytes.Buffer, error) {
 	mountCmd := exec.Command("mount", "-t", "fuse.glusterfs")
 
 	mountCmd.Stdout = stdoutBuffer
-	err := mountCmd.Run()
 
-	if err != nil {
-		return stdoutBuffer, err
-	}
-	return stdoutBuffer, nil
+	return stdoutBuffer, mountCmd.Run()
 }
 
 func execTouchOnVolumes(mountpoint string) (bool, error) {
@@ -120,6 +116,7 @@ func ExecVolumeProfileGvInfoCumulative(volumeName string) (structs.VolProfile, e
 	args := []string{"volume", "profile"}
 	args = append(args, volumeName)
 	args = append(args, "info", "cumulative")
+	args := []string{"volume", "profile", volumeName, "info", "cumulative"}
 	bytesBuffer, cmdErr := execGlusterCommand(args...)
 	if cmdErr != nil {
 		return structs.VolProfile{}, cmdErr
@@ -176,7 +173,6 @@ func ExecVolumeHealInfo(volumeName string) (int, error) {
 
 // ExecVolumeQuotaList executes volume quota list on host system and processess input
 // returns QuotaList structs and errors
-
 func ExecVolumeQuotaList(volumeName string) (structs.VolumeQuotaXML, error) {
 	randSleep()
 	args := []string{"volume", "quota", volumeName, "list"}
