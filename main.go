@@ -259,24 +259,97 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	if e.profile {
 		for _, volume := range volumeInfo.VolInfo.Volumes.Volume {
 			if e.volumes[0] == allVolumes || ContainsVolume(e.volumes, volume.Name) {
+				stat := true
+				readlink := true
+				mknod :=true
+				mkdir := true
+				unlink := true
+				rmdir := true
 				volumeProfile, execVolProfileErr := ExecVolumeProfileGvInfoCumulative(volume.Name)
 				if execVolProfileErr != nil {
 					log.Errorf("Error while executing or marshalling gluster profile output: %v", execVolProfileErr)
 				}
+				log.Debug("Unmarshalled xml of profile: %v", volumeProfile)
 				for _, brick := range volumeProfile.Brick {
-					if strings.HasPrefix(brick.BrickName, e.hostname) {
-						ch <- prometheus.MustNewConstMetric(
-							brickDuration, prometheus.CounterValue, float64(brick.CumulativeStats.Duration), volume.Name, brick.BrickName,
-						)
+					ch <- prometheus.MustNewConstMetric(
+						brickDuration, prometheus.CounterValue, float64(brick.CumulativeStats.Duration), volume.Name, brick.BrickName,
+					)
 
-						ch <- prometheus.MustNewConstMetric(
-							brickDataRead, prometheus.CounterValue, float64(brick.CumulativeStats.TotalRead), volume.Name, brick.BrickName,
-						)
+					ch <- prometheus.MustNewConstMetric(
+						brickDataRead, prometheus.CounterValue, float64(brick.CumulativeStats.TotalRead), volume.Name, brick.BrickName,
+					)
 
-						ch <- prometheus.MustNewConstMetric(
-							brickDataWritten, prometheus.CounterValue, float64(brick.CumulativeStats.TotalWrite), volume.Name, brick.BrickName,
-						)
-						for _, fop := range brick.CumulativeStats.FopStats.Fop {
+					ch <- prometheus.MustNewConstMetric(
+						brickDataWritten, prometheus.CounterValue, float64(brick.CumulativeStats.TotalWrite), volume.Name, brick.BrickName,
+					)
+					for _, fop := range brick.CumulativeStats.FopStats.Fop {
+						if fop.Name == "STAT" || fop.Name == "READLINK" || fop.Name == "MKNOD" || fop.Name == "MKDIR" || fop.Name == "UNLINK" || fop.Name == "RMDIR" {
+							log.Debug("We're here: %v", fop.Name)
+							switch fop.Name {
+							case "STAT":
+								log.Debug("stat1: %v", stat)
+								if stat {
+									stat = false
+									log.Debug("stat2: %v", stat)
+								} else {
+									log.Debug("stat3: %v", stat)
+									fop.Name = "CACHE_STAT"
+									stat = true
+									log.Debug("stat4: %v", stat)
+								}
+							case "READLINK":
+								if readlink {
+									readlink = false
+								} else {
+									fop.Name = "CACHE_READLINK"
+									readlink = true
+								}
+							case "MKNOD":
+								if mknod {
+									mknod = false
+								} else {
+									fop.Name = "CACHE_MKNOD"
+									mknod = true
+								}
+							case "MKDIR":
+								if mkdir {
+									mkdir = false
+								} else {
+									fop.Name = "CACHE_MKDIR"
+									mkdir = true
+								}
+							case "UNLINK":
+								if unlink {
+									unlink = false
+								} else {
+									fop.Name = "CACHE_UNLINK"
+									unlink = true
+								}
+							case "RMDIR":
+								if rmdir {
+									rmdir = false
+								} else {
+									fop.Name = "CACHE_RMDIR"
+									rmdir = true
+								}
+							}
+							log.Debug("Got here: %v", fop.Name)
+							ch <- prometheus.MustNewConstMetric(
+								brickFopHits, prometheus.CounterValue, float64(fop.Hits), volume.Name, brick.BrickName, fop.Name,
+							)
+
+							ch <- prometheus.MustNewConstMetric(
+								brickFopLatencyAvg, prometheus.CounterValue, float64(fop.AvgLatency), volume.Name, brick.BrickName, fop.Name,
+							)
+
+							ch <- prometheus.MustNewConstMetric(
+								brickFopLatencyMin, prometheus.CounterValue, float64(fop.MinLatency), volume.Name, brick.BrickName, fop.Name,
+							)
+
+							ch <- prometheus.MustNewConstMetric(
+								brickFopLatencyMax, prometheus.CounterValue, float64(fop.MaxLatency), volume.Name, brick.BrickName, fop.Name,
+							)
+						} else {
 							ch <- prometheus.MustNewConstMetric(
 								brickFopHits, prometheus.CounterValue, float64(fop.Hits), volume.Name, brick.BrickName, fop.Name,
 							)
