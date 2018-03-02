@@ -3,11 +3,11 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
 	"os"
 	"os/exec"
 	"strconv"
 	"time"
-	"math/rand"
 
 	"github.com/ofesseler/gluster_exporter/structs"
 	"github.com/prometheus/common/log"
@@ -15,9 +15,9 @@ import (
 
 func randSleep() {
 	rand.Seed(time.Now().UnixNano())
-    r := rand.Intn(500000000)
-    d := time.Duration(r)
-    time.Sleep(d)
+	r := rand.Intn(500000000)
+	d := time.Duration(r)
+	time.Sleep(d)
 }
 func execGlusterCommand(arg ...string) (*bytes.Buffer, error) {
 	stdoutBuffer := &bytes.Buffer{}

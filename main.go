@@ -273,7 +273,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			if e.volumes[0] == allVolumes || ContainsVolume(e.volumes, volume.Name) {
 				stat := true
 				readlink := true
-				mknod :=true
+				mknod := true
 				mkdir := true
 				unlink := true
 				rmdir := true
