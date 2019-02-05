@@ -113,9 +113,9 @@ func ExecPeerStatus() (structs.PeerStatus, error) {
 // returns VolumeInfoXML struct and error
 func ExecVolumeProfileGvInfoCumulative(volumeName string) (structs.VolProfile, error) {
 	randSleep()
-	args := []string{"volume", "profile"}
-	args = append(args, volumeName)
-	args = append(args, "info", "cumulative")
+//	args := []string{"volume", "profile"}
+//	args = append(args, volumeName)
+//	args = append(args, "info", "cumulative")
 	args := []string{"volume", "profile", volumeName, "info", "cumulative"}
 	bytesBuffer, cmdErr := execGlusterCommand(args...)
 	if cmdErr != nil {
