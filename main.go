@@ -54,6 +54,12 @@ var (
 		[]string{"volume"}, nil,
 	)
 
+	nodeStatus = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "node_status"),
+		"Status code of node.",
+		[]string{"hostname", "path", "volume"}, nil,
+	)
+
 	nodeSizeFreeBytes = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "node_size_free_bytes"),
 		"Free bytes reported for each node on each instance. Labels are to distinguish origins",
@@ -197,6 +203,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- brickDataRead
 	ch <- brickDataWritten
 	ch <- peersConnected
+	ch <- nodeStatus
 	ch <- nodeSizeFreeBytes
 	ch <- nodeSizeTotalBytes
 	ch <- brickFopHits
@@ -391,6 +398,10 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	}
 	for _, vol := range volumeStatusAll.VolStatus.Volumes.Volume {
 		for _, node := range vol.Node {
+			ch <- prometheus.MustNewConstMetric(
+				nodeStatus, prometheus.GaugeValue, float64(node.Status), node.Hostname, node.Path, vol.VolName,
+			)
+
 			ch <- prometheus.MustNewConstMetric(
 				nodeSizeTotalBytes, prometheus.CounterValue, float64(node.SizeTotal), node.Hostname, node.Path, vol.VolName,
 			)
