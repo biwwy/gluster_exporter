@@ -138,6 +138,12 @@ var (
 		nil, nil,
 	)
 
+	peersInCluster = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "peers_in_cluster"),
+		"Is peer connected to gluster cluster and in_cluster state.",
+		nil, nil,
+	)
+
 	healInfoFilesCount = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "heal_info_files_count"),
 		"File count of files out of sync, when calling 'gluster v heal VOLNAME info",
@@ -203,6 +209,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- brickDataRead
 	ch <- brickDataWritten
 	ch <- peersConnected
+	ch <- peersInCluster
 	ch <- nodeStatus
 	ch <- nodeSizeFreeBytes
 	ch <- nodeSizeTotalBytes
@@ -267,11 +274,18 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		log.Errorf("couldn't parse xml of peer status: %v", peerStatusErr)
 	}
 	count := 0
-	for range peerStatus.Peer {
+	countInCluster := 0
+	for _, peer := range peerStatus.Peer {
+		if peer.StateStr == "Peer in Cluster" {
+			countInCluster++
+		}
 		count++
 	}
 	ch <- prometheus.MustNewConstMetric(
 		peersConnected, prometheus.GaugeValue, float64(count),
+	)
+	ch <- prometheus.MustNewConstMetric(
+		peersInCluster, prometheus.GaugeValue, float64(countInCluster),
 	)
 
 	// reads profile info
